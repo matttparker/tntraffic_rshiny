@@ -1,0 +1,114 @@
+```{r}
+library(censusapi)
+library(tidyverse)
+options(scipen=999)
+```
+
+
+```{r}
+#Inspect Census Metadata
+# apis <- listCensusApis()
+# View(apis)
+```
+
+```{r}
+# acs_vars <- listCensusMetadata(
+#     name = "pep/population", 
+#     type = "variables",
+#     vintage=2019)
+# View(acs_vars)
+```
+
+```{r}
+#Import Population Data
+county_pops <- getCensus(
+  key = CENSUS_KEY,  
+  name = "pep/population", 
+  vintage = 2019, 
+  vars = c("NAME", "COUNTY", "DATE_CODE", "DATE_DESC", "POP"), 
+  region = "county:*",
+  regionin = "state:47")
+#View(county_pops)
+```
+
+```{r}
+#Clean Data
+county_pops <- county_pops %>%
+  select(-c("state", "county", "COUNTY", "DATE_CODE")) %>%
+  mutate(NAME = sub(" .*", "", NAME)) %>%
+  filter(!grepl('4/1', DATE_DESC)) %>%
+  mutate(DATE_DESC = substr(DATE_DESC,5,8))
+colnames(county_pops) <- c('county', 'year', 'population')
+#Arrange, and add a percent change column
+county_pops <- county_pops %>%
+  filter(year != 2019) %>%
+  mutate(year = as.numeric(year)) %>%
+  arrange(county, desc(year)) %>%
+  group_by(county) %>% 
+  mutate(pct_pop_change = (population/lead(population) - 1) * 100)
+#View(county_pops)
+```
+
+
+```{r}
+#Create function to import commute data by year
+commute_import <- function(year_start, year_end) {
+  
+  commute_df <- NULL
+  year = year_start
+  
+  while (year <= year_end){
+
+    acs_comm <- getCensus(
+      key = CENSUS_KEY,  
+      name = "acs/acs1/subject", 
+      vintage = year, 
+      vars = c("NAME", "S0801_C01_046E"), 
+      region = "county:*",
+      regionin = "state:47")
+    
+    acs_comm <- acs_comm %>%
+      select(c("NAME", "S0801_C01_046E")) %>%
+      mutate(NAME = sub(" .*", "", NAME)) %>%
+      mutate(year = year)
+  
+    colnames(acs_comm) <- c('county', 'avg_commute_mins', 'year')
+    
+    commute_df <- bind_rows(commute_df, acs_comm)
+    
+    year <- year + 1
+  
+  }
+    
+  return(commute_df)
+  
+}
+```
+
+```{r}
+#Import desired years of commuter data
+commute_df <- commute_import(2010, 2018)
+#Arrange, and add a percent change column
+commute_df <- commute_df %>%
+  arrange(county, desc(year)) %>%
+  group_by(county) %>% 
+  mutate(pct_comm_change = (avg_commute_mins/lead(avg_commute_mins) - 1) * 100)
+#View(commute_df)
+```
+
+```{r}
+#Merge census dataframes and export
+census_traffic <- left_join(county_pops, commute_df)
+#View(census_traffic)
+write_csv(census_traffic, "census_traffic.csv")
+```
+
+
+
+
+
+
+
+
+
+

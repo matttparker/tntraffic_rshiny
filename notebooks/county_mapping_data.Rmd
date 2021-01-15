@@ -1,0 +1,66 @@
+```{r}
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(ggplot2)
+```
+
+```{r}
+counties <- st_read("../data/tn_counties.shp")
+```
+
+```{r}
+counties <- counties %>% drop_na()
+colnames(counties) <- str_to_lower(colnames(counties))
+  #mutate(centroid = st_centroid(geometry)) %>%
+  #st_transform("+proj=longlat +ellps=WGS84 +datum=WGS84")
+```
+
+
+```{r}
+#View(counties)
+```
+
+```{r}
+#st_crs(counties)
+```
+
+```{r}
+# ggplot() + 
+#   geom_sf(data = counties, size = 3, color = "black", fill = "cyan1") + 
+#   ggtitle("TN Counties") + 
+#   coord_sf()
+```
+
+Pull County List for use in Google API Notebook
+```{r}
+county_list <- data_frame(counties$COUNTY)
+```
+
+```{r}
+#write_csv(county_list, "county_list.csv")
+```
+
+Import County Geographic Centers, and Merge
+```{r}
+county_centers <- read_csv("../data/county_centers.csv")
+```
+
+```{r}
+county_centers <- county_centers %>% select(-X1)
+```
+
+```{r}
+counties <- inner_join(counties, county_centers, by = "county")
+```
+
+```{r}
+#View(counties)
+```
+
+```{r}
+#write_csv(counties, "counties_final.csv")
+```
+
+
+

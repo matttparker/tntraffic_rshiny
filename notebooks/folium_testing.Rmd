@@ -1,0 +1,92 @@
+```{r}
+library(shiny)
+library(tidyverse)
+library(ggplot2)
+library(shinydashboard)
+library(RColorBrewer)
+library(foreign)
+library(leaflet)
+library(magrittr)
+library(dplyr)
+```
+
+```{r}
+traffic <- read.dbf("../data/TrfcHistYR.dbf")
+```
+
+```{r}
+colnames(traffic) <- str_to_lower(colnames(traffic))
+traffic$year <- as.numeric(as.character(traffic$year))
+traffic <- rename(traffic, long = x, lat = y) %>%
+  filter(year >= 2009) %>%
+  group_by(station_id) %>% 
+  mutate(pct_change = (adjavgdly/lead(adjavgdly) - 1) * 100)
+traffic$pct_change <- traffic$pct_change %>% replace(is.na(.), 0)
+traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
+```
+
+```{r}
+View(traffic)
+```
+
+```{r}
+#write_csv(traffic, "traffic.csv")
+```
+
+
+```{r}
+#Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
+traffic <- traffic %>%
+  mutate(weight = year - 2009,
+         weighted_pct_change = weight * pct_change)
+```
+
+```{r}
+#Find the projected growth rate using the weighted pct changes
+traffic_proj_rates <- traffic %>%
+  group_by(station_id) %>%
+  summarise(proj_rate = sum(pct_change) / sum(weight)) %>%
+  mutate(year = 0)
+View(traffic_proj_rates)
+  #summarise(proj_rate = sum(weighted_pct_change) / sum(weight), na.rm = TRUE)
+```
+
+```{r}
+#Merge traffic projected rates to main traffic dataframe
+traffic <- traffic %>%
+  bind_rows(traffic_proj_rates)
+View(traffic)
+```
+
+
+BEGIN LEAFLET MAP
+
+```{r}
+pal <- colorNumeric(
+  palette = "Blues",
+  domain = davidson_traffic$pct_change)
+
+davidson_map <- leaflet(davidson_traffic) %>%
+  setView(-86.822, 36.134, zoom = 10) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    color = ~pal(pct_change),
+    stroke = FALSE, fillOpacity = 0.8,
+    lng = ~long,lat = ~lat,
+    popup = ~paste0(location,
+                    "<br/>Average Daily Traffic: ", adjavgdly,
+                    "<br/>Percent Change: ", pct_change))
+davidson_map
+```
+
+
+
+
+```{r}
+#leaflet(options = leafletOptions(minZoom = 0, maxZoom = 18))
+```
+
+
+
+
+
