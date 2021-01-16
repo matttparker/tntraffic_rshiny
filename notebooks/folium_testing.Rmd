@@ -26,7 +26,7 @@ traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 ```
 
 ```{r}
-View(traffic)
+#View(traffic)
 ```
 
 ```{r}
@@ -45,16 +45,16 @@ traffic <- traffic %>%
 #Find the projected growth rate using the weighted pct changes
 traffic_proj_rates <- traffic %>%
   group_by(station_id) %>%
-  summarise(proj_rate = sum(pct_change) / sum(weight)) %>%
-  mutate(year = 0)
-View(traffic_proj_rates)
-  #summarise(proj_rate = sum(weighted_pct_change) / sum(weight), na.rm = TRUE)
+  summarise(proj_rate = sum(pct_change) / sum(weight) * 100) %>%
+  mutate(year = 2020)
+#View(traffic_proj_rates)
 ```
 
 ```{r}
 #Merge traffic projected rates to main traffic dataframe
 traffic <- traffic %>%
-  bind_rows(traffic_proj_rates)
+  bind_rows(traffic_proj_rates) %>%
+  arrange(station_id, desc(year))
 View(traffic)
 ```
 

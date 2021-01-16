@@ -99,7 +99,7 @@ commute_df <- commute_df %>%
 ```{r}
 #Merge census dataframes and export
 census_traffic <- left_join(county_pops, commute_df)
-#View(census_traffic)
+View(census_traffic)
 write_csv(census_traffic, "census_traffic.csv")
 ```
 

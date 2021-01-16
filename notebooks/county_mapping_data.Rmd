@@ -6,23 +6,21 @@ library(ggplot2)
 ```
 
 ```{r}
-counties <- st_read("../data/tn_counties.shp")
+#Source: https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html
+counties <- st_read("../data/cb_2018_us_county_20m.shp")
 ```
 
 ```{r}
-counties <- counties %>% drop_na()
-colnames(counties) <- str_to_lower(colnames(counties))
-  #mutate(centroid = st_centroid(geometry)) %>%
-  #st_transform("+proj=longlat +ellps=WGS84 +datum=WGS84")
+counties <- counties %>% 
+  filter(STATEFP == 47) %>%
+  select(c("COUNTYFP", "NAME", "geometry")) %>%
+  arrange(NAME)
+colnames(counties) <- c("county_code", "county", "geometry")
 ```
 
 
 ```{r}
 #View(counties)
-```
-
-```{r}
-#st_crs(counties)
 ```
 
 ```{r}
@@ -34,7 +32,8 @@ colnames(counties) <- str_to_lower(colnames(counties))
 
 Pull County List for use in Google API Notebook
 ```{r}
-county_list <- data_frame(counties$COUNTY)
+# county_list <- data_frame(counties$county)
+# View(county_list)
 ```
 
 ```{r}
@@ -44,23 +43,44 @@ county_list <- data_frame(counties$COUNTY)
 Import County Geographic Centers, and Merge
 ```{r}
 county_centers <- read_csv("../data/county_centers.csv")
+View(county_centers)
 ```
 
 ```{r}
-county_centers <- county_centers %>% select(-X1)
+county_centers <- county_centers %>% 
+  select(-X1) %>%
+  arrange(county)
 ```
 
 ```{r}
-counties <- inner_join(counties, county_centers, by = "county")
+counties_merge <- inner_join(counties, county_centers, by = "county")
 ```
 
 ```{r}
-#View(counties)
+View(counties_merge)
 ```
 
 ```{r}
 #write_csv(counties, "counties_final.csv")
 ```
+
+```{r}
+ggplot(data = counties) +
+  geom_sf(color = "black", aes(fill = county_code))
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

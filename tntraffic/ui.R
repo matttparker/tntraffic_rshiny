@@ -7,6 +7,11 @@ shinyUI(
         # Sidebar to Select County
         
         dashboardSidebar(
+            sidebarMenu(
+                menuItem("View Your County", tabName = "county_map"),
+                menuItem("View the State", tabName = "tn_map")
+            ),
+            
             selectInput("county",
                         "Select Your County:",
                         unique(traffic$county)
@@ -19,9 +24,19 @@ shinyUI(
         
         # Show a plot of the generated distribution
         dashboardBody(
-            fluidRow(
-                box(width = NULL, title = 'Map', leafletOutput("map")),
-                box(width = NULL, plotlyOutput("scatter_plot"))
+             tabItems(
+                tabItem(tabName = "county_map",
+                    fluidRow(
+                        box(width = NULL, title = 'Map', leafletOutput("map")),
+                        box(width = NULL, plotlyOutput("scatter_plot"))
+                    )
+                ),
+                tabItem(tabName = "tn_map",
+                   fluidRow(
+                       box(width = NULL, title = 'Map', leafletOutput("map2")),
+                       box(width = NULL, plotlyOutput("scatter_plot2"))
+                    )
+                )
             )
         )
         
