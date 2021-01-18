@@ -8,6 +8,8 @@ library(foreign)
 library(leaflet)
 library(magrittr)
 library(dplyr)
+library(fpp2)
+library(fable)
 ```
 
 ```{r}
@@ -26,8 +28,15 @@ traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 ```
 
 ```{r}
-#View(traffic)
+#Remove roads with missing years
+remove_roads <- traffic %>%
+  group_by(station_id) %>%
+  count(station_id) %>%
+  filter(n < 10)
+remove_roads <- as.list(remove_roads$station_id)
+View(remove_roads)
 ```
+
 
 ```{r}
 #write_csv(traffic, "traffic.csv")
@@ -35,28 +44,81 @@ traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 
 
 ```{r}
-#Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
-traffic <- traffic %>%
-  mutate(weight = year - 2009,
-         weighted_pct_change = weight * pct_change)
+# #Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
+# traffic <- traffic %>%
+#   mutate(weight = year - 2009,
+#          weighted_pct_change = weight * pct_change)
 ```
 
 ```{r}
-#Find the projected growth rate using the weighted pct changes
-traffic_proj_rates <- traffic %>%
-  group_by(station_id) %>%
-  summarise(proj_rate = sum(pct_change) / sum(weight) * 100) %>%
-  mutate(year = 2020)
-#View(traffic_proj_rates)
+# #Find the projected growth rate using the weighted pct changes
+# traffic_proj_rates <- traffic %>%
+#   group_by(station_id) %>%
+#   summarise(proj_rate = sum(pct_change) / sum(weight) * 100) %>%
+#   mutate(year = 2020)
+# #View(traffic_proj_rates)
 ```
 
 ```{r}
-#Merge traffic projected rates to main traffic dataframe
-traffic <- traffic %>%
-  bind_rows(traffic_proj_rates) %>%
-  arrange(station_id, desc(year))
-View(traffic)
+# #Merge traffic projected rates to main traffic dataframe
+# traffic <- traffic %>%
+#   bind_rows(traffic_proj_rates) %>%
+#   arrange(station_id, desc(year))
+# View(traffic)
 ```
+
+
+FIND WEIGHTED AVERAGE OF TRAFFIC CHANGES PER YEAR
+```{r}
+traffic_forecast <- traffic %>%
+  group_by(county, year) %>%
+  mutate(traffic_factor = adjavgdly / sum(adjavgdly)) %>% 
+  mutate(weighted_traffic = pct_change * traffic_factor) %>%
+  summarise(sum(weighted_traffic))
+View(traffic_forecast)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TESTING FABLE PACKAGE:
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 BEGIN LEAFLET MAP

@@ -43,7 +43,7 @@ Pull County List for use in Google API Notebook
 Import County Geographic Centers, and Merge
 ```{r}
 county_centers <- read_csv("../data/county_centers.csv")
-View(county_centers)
+#View(county_centers)
 ```
 
 ```{r}
@@ -53,19 +53,19 @@ county_centers <- county_centers %>%
 ```
 
 ```{r}
-counties_merge <- inner_join(counties, county_centers, by = "county")
+counties_geo <- inner_join(counties, county_centers, by = "county")
 ```
 
 ```{r}
-View(counties_merge)
+#View(counties_geo)
 ```
 
 ```{r}
-#write_csv(counties, "counties_final.csv")
+#write_csv(counties_geo, "counties_geo.csv")
 ```
 
 ```{r}
-ggplot(data = counties) +
+ggplot(data = counties_geo) +
   geom_sf(color = "black", aes(fill = county_code))
   
 ```
