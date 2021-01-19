@@ -10,6 +10,8 @@ library(magrittr)
 library(dplyr)
 library(fpp2)
 library(fable)
+library(tsibble)
+library(lubridate)
 ```
 
 ```{r}
@@ -28,20 +30,33 @@ traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 ```
 
 ```{r}
-#Remove roads with missing years
-remove_roads <- traffic %>%
+#Keep roads with all years
+keep_roads <- traffic %>%
   group_by(station_id) %>%
   count(station_id) %>%
-  filter(n < 10)
-remove_roads <- as.list(remove_roads$station_id)
-View(remove_roads)
+  filter(n == 10) %>%
+  pull(station_id)
+#keep_roads <- remove_roads$station_id
+#View(keep_roads)
+```
+
+```{r}
+#Filter traffic by removing rows with station_id not in keep_roads
+traffic <- traffic[traffic$station_id %in% keep_roads, ]
+#View(traffic)
+#expr[expr$cell_type %in% c("hesc", "bj fibroblast"), ]
 ```
 
 
+
+
+
+
+
+SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA
 ```{r}
 #write_csv(traffic, "traffic.csv")
 ```
-
 
 ```{r}
 # #Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
@@ -68,41 +83,89 @@ View(remove_roads)
 ```
 
 
+
+
 FIND WEIGHTED AVERAGE OF TRAFFIC CHANGES PER YEAR
 ```{r}
-traffic_forecast <- traffic %>%
+traffic_growth <- traffic %>%
   group_by(county, year) %>%
   mutate(traffic_factor = adjavgdly / sum(adjavgdly)) %>% 
   mutate(weighted_traffic = pct_change * traffic_factor) %>%
   summarise(sum(weighted_traffic))
-View(traffic_forecast)
+colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
+View(traffic_growth)
+```
+
+```{r}
+traffic_growth <- traffic %>%
+  group_by(county, year) %>%
+  summarise(sum(adjavgdly) - sum(lead(adjavgdly))) %>% View() 
+    
+    
+#     traffic_factor = adjavgdly / sum(adjavgdly)) %>% 
+#   mutate(weighted_traffic = pct_change * traffic_factor) %>%
+#   summarise(sum(weighted_traffic))
+# colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
+# View(traffic_growth)
+```
+
+```{r}
+#Create annualized growth rate from 2009-2018
+traffic_growth_nine_yr <- traffic %>%
+  group_by(county, year) %>%
+  summarise(total_daily = sum(adjavgdly)) %>% 
+  arrange(county, desc(year)) %>%
+  mutate(ann_growth_rate = ((total_daily / lead(total_daily, 9L)) ** (1/9) - 1) * 100) %>%
+  filter(year == 2018)
+View(traffic_growth_nine_yr)
+```
+
+```{r}
+#Create annualized growth rate from 2015-2018
+traffic_growth_three_yr <- traffic %>%
+  filter(year >= 2015) %>%
+  group_by(county, year) %>%
+  summarise(total_daily = sum(adjavgdly)) %>% 
+  arrange(county, desc(year)) %>%
+  mutate(ann_growth_rate = ((total_daily / lead(total_daily, 3L)) ** (1/3) - 1) * 100) %>%
+  filter(year == 2018)
+View(traffic_growth_three_yr)
 ```
 
 
+MERGE TRAFFIC FORECAST, POPULATION, AND COMMUTER DATA BY COUNTY BY YEAR
+```{r}
+#import population and commuter data
+census_traffic <- read_csv('../data/census_traffic.csv')
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+#merge with traffic forecast
+forecast_df <- census_traffic %>%
+  inner_join(traffic_growth, by = c("county", "year"))
+#View(forecast_df)
+write_csv(forecast_df, "forecast_df.csv")
+```
 
 
 TESTING FABLE PACKAGE:
 ```{r}
-
+#convert to tsibble - test one county for now
+forecast_ts <-forecast_df %>%
+  mutate(year = lubridate::ymd(year, truncated = 2L)) %>%
+  filter(county == "Davidson") %>%
+  as_tsibble()
 ```
 
 
+```{r}
+forecast_ts
+```
 
+```{r}
+yrs <- c(2001, 2002, 2002, 2002, 2003, 2005)
+lubridate::ymd(yrs, truncated = 2L)
+```
 
 
 

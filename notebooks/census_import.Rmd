@@ -97,10 +97,11 @@ commute_df <- commute_df %>%
 ```
 
 ```{r}
-#Merge census dataframes and export
-census_traffic <- left_join(county_pops, commute_df)
+#Merge census dataframes, correct multi-word county name, and export
+census_traffic <- left_join(county_pops, commute_df) %>%
+  mutate(county = str_replace(county, "Van", "Van Buren"))
 View(census_traffic)
-write_csv(census_traffic, "census_traffic.csv")
+#write_csv(census_traffic, "census_traffic.csv")
 ```
 
 
