@@ -17,9 +17,12 @@ shinyUI(
                         unique(traffic$county)
             
             ),
-            selectInput("year",
+            sliderInput("year",
                         "Select a Year:",
-                        unique(traffic$year))
+                        value = 2011,
+                        min = 2011,
+                        max = 2018,
+                        animate = TRUE)
         ),
         
         # Show a plot of the generated distribution
@@ -33,7 +36,7 @@ shinyUI(
                 ),
                 tabItem(tabName = "tn_map",
                    fluidRow(
-                       box(width = NULL, title = 'Map', plotOutput("tn_map"))
+                       box(width = NULL, title = 'Map', plotlyOutput("tn_map"))
                     )
                 )
             )

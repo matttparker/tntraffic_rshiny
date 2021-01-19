@@ -152,12 +152,21 @@ census_traffic <- census_traffic %>%
 #   st_sf()
 # counties_data
 counties_data <- inner_join(counties %>% as.data.frame(), census_traffic, by = "county")
+
+#Comment out below line if you want to continue without converting to sf
 counties_data %<>% st_sf(sf_column_name = 'geometry')
-View(counties_data)
+
 counties_data
+View(counties_data)
+
+class(counties_data)
 
 #st_write(counties_data, "counties_data.shp")
+#write_csv(counties_data, "counties_data.csv")
 ```
+
+
+
 
 p <- part_data %>%
   filter(date == as.Date("2020-03-30")) %>%
@@ -170,11 +179,16 @@ p <- part_data %>%
 p + 
   transition_manual(frames = date)
 
+
+
+
+
+
 BUILD ANIMATED GGPLOT MAPS
 ```{r}
 tn_map <- counties_data %>%
   filter(year == 2011-01-01) %>%
-  ggplot() + geom_sf(data = counties_data, color = "black", aes(fill = population, na.value="grey80"))
+  ggplot() + geom_sf(data = counties_data, color = "black", aes(fill = population))
 
 #tn_map_animated <- tn_map + transition_manual(frames = date)
   
@@ -183,6 +197,19 @@ tn_map
 # ggplot(data = counties_data %>% filter(year == 2018)) +
 #   geom_sf(color = "black", aes(fill = population))
 ```
+
+```{r}
+# counties_data %>%
+#   #mutate(year = as.Date(year)) %>%
+#   filter(year == 2018-01-01) %>%
+#   ggplot() + geom_sf(data = counties_data, color = "black", aes(fill = population))
+# counties_data
+
+counties_data %>%
+  filter(year == 2018-01-01) %>%
+  ggplot() + geom_sf(data = counties_data, color = "black", aes(fill = population))
+```
+
 
 
 

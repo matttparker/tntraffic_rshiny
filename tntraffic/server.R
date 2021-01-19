@@ -3,7 +3,7 @@ shinyServer(function(input, output) {
     rval_traffic <- reactive({
         traffic %>%
             filter(county == input$county)  %>%
-            filter(year == input$year)
+            filter(year == paste0(input$year, "-01-01"))
     })
     
     rval_counties <- reactive({
@@ -12,9 +12,10 @@ shinyServer(function(input, output) {
             distinct(county, .keep_all = TRUE)
     })
     
-    rval_county_data <- reactive({
-        counties %>%
-            filter(year == as.Date(input$year))
+    rval_counties_data <- reactive({
+        #browser()
+        counties_data %>%
+            filter(year == paste0(input$year, "-01-01"))
     })
     
     output$scatter_plot <- renderPlotly({
@@ -52,9 +53,10 @@ shinyServer(function(input, output) {
             addLegend(pal = pal, values = ~pct_change, title = "Percent Change", position = "bottomright")
     })
     
-    output$tn_map <- renderPlot({
-        rval_county_data() %>%
-            ggplot() + geom_sf(data = rval_county_data(), color = "black", aes(fill = population, na.value="grey80"))
+    output$tn_map <- renderPlotly({
+        tn_map <- rval_counties_data() %>%
+            ggplot() + geom_sf(color = "black", aes(fill= traffic_growth_rate))
+        tn_map
     })
     
 })
