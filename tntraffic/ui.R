@@ -33,8 +33,7 @@ shinyUI(
                 ),
                 tabItem(tabName = "tn_map",
                    fluidRow(
-                       box(width = NULL, title = 'Map', leafletOutput("map2")),
-                       box(width = NULL, plotlyOutput("scatter_plot2"))
+                       box(width = NULL, title = 'Map', plotOutput("tn_map"))
                     )
                 )
             )

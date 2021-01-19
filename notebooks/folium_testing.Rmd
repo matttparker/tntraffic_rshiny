@@ -12,6 +12,8 @@ library(fpp2)
 library(fable)
 library(tsibble)
 library(lubridate)
+library(sf)
+library(gganimate)
 ```
 
 ```{r}
@@ -21,10 +23,11 @@ traffic <- read.dbf("../data/TrfcHistYR.dbf")
 ```{r}
 colnames(traffic) <- str_to_lower(colnames(traffic))
 traffic$year <- as.numeric(as.character(traffic$year))
-traffic <- rename(traffic, long = x, lat = y) %>%
+traffic <- rename(traffic, long = x, lat = y, daily_traffic = adjavgdly) %>%
   filter(year >= 2009) %>%
   group_by(station_id) %>% 
-  mutate(pct_change = (adjavgdly/lead(adjavgdly) - 1) * 100)
+  mutate(pct_change = (daily_traffic/lead(daily_traffic) - 1) * 100) %>%
+  mutate(year = lubridate::ymd(year, truncated = 2L))
 traffic$pct_change <- traffic$pct_change %>% replace(is.na(.), 0)
 traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 ```
@@ -47,6 +50,9 @@ traffic <- traffic[traffic$station_id %in% keep_roads, ]
 #expr[expr$cell_type %in% c("hesc", "bj fibroblast"), ]
 ```
 
+```{r}
+#write_csv(traffic, "traffic.csv")
+```
 
 
 
@@ -54,10 +60,6 @@ traffic <- traffic[traffic$station_id %in% keep_roads, ]
 
 
 SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA
-```{r}
-#write_csv(traffic, "traffic.csv")
-```
-
 ```{r}
 # #Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
 # traffic <- traffic %>%
@@ -89,20 +91,20 @@ FIND WEIGHTED AVERAGE OF TRAFFIC CHANGES PER YEAR
 ```{r}
 traffic_growth <- traffic %>%
   group_by(county, year) %>%
-  mutate(traffic_factor = adjavgdly / sum(adjavgdly)) %>% 
+  mutate(traffic_factor = daily_traffic / sum(daily_traffic)) %>% 
   mutate(weighted_traffic = pct_change * traffic_factor) %>%
   summarise(sum(weighted_traffic))
 colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
-View(traffic_growth)
+#View(traffic_growth)
 ```
 
 ```{r}
-traffic_growth <- traffic %>%
-  group_by(county, year) %>%
-  summarise(sum(adjavgdly) - sum(lead(adjavgdly))) %>% View() 
+# traffic_growth <- traffic %>%
+#   group_by(county, year) %>%
+#   summarise(sum(daily_traffic) - sum(lead(daily_traffic))) %>% View() 
+#     
     
-    
-#     traffic_factor = adjavgdly / sum(adjavgdly)) %>% 
+#     traffic_factor = daily_traffic / sum(daily_traffic)) %>% 
 #   mutate(weighted_traffic = pct_change * traffic_factor) %>%
 #   summarise(sum(weighted_traffic))
 # colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
@@ -113,11 +115,11 @@ traffic_growth <- traffic %>%
 #Create annualized growth rate from 2009-2018
 traffic_growth_nine_yr <- traffic %>%
   group_by(county, year) %>%
-  summarise(total_daily = sum(adjavgdly)) %>% 
+  summarise(total_daily = sum(daily_traffic)) %>% 
   arrange(county, desc(year)) %>%
   mutate(ann_growth_rate = ((total_daily / lead(total_daily, 9L)) ** (1/9) - 1) * 100) %>%
   filter(year == 2018)
-View(traffic_growth_nine_yr)
+#View(traffic_growth_nine_yr)
 ```
 
 ```{r}
@@ -125,27 +127,75 @@ View(traffic_growth_nine_yr)
 traffic_growth_three_yr <- traffic %>%
   filter(year >= 2015) %>%
   group_by(county, year) %>%
-  summarise(total_daily = sum(adjavgdly)) %>% 
+  summarise(total_daily = sum(daily_traffic)) %>% 
   arrange(county, desc(year)) %>%
   mutate(ann_growth_rate = ((total_daily / lead(total_daily, 3L)) ** (1/3) - 1) * 100) %>%
   filter(year == 2018)
-View(traffic_growth_three_yr)
+#View(traffic_growth_three_yr)
 ```
 
 
-MERGE TRAFFIC FORECAST, POPULATION, AND COMMUTER DATA BY COUNTY BY YEAR
+MERGE TRAFFIC FORECAST, POPULATION, COMMUTER DATA, AND COUNTY GEOGRAPHY BY COUNTY BY YEAR
 ```{r}
-#import population and commuter data
+#import census and county geography data
 census_traffic <- read_csv('../data/census_traffic.csv')
+counties <- st_read('../data/counties_geo.shp')
 ```
 
 ```{r}
-#merge with traffic forecast
-forecast_df <- census_traffic %>%
+#merge with traffic forecast and counties
+census_traffic <- census_traffic %>%
+  mutate(year = lubridate::ymd(year, truncated = 2L)) %>%
   inner_join(traffic_growth, by = c("county", "year"))
-#View(forecast_df)
-write_csv(forecast_df, "forecast_df.csv")
+# counties_data <- counties %>%
+#   inner_join(census_traffic, by = "county") %>%
+#   st_sf()
+# counties_data
+counties_data <- inner_join(counties %>% as.data.frame(), census_traffic, by = "county")
+counties_data %<>% st_sf(sf_column_name = 'geometry')
+View(counties_data)
+counties_data
+
+#st_write(counties_data, "counties_data.shp")
 ```
+
+p <- part_data %>%
+  filter(date == as.Date("2020-03-30")) %>%
+  ggplot(aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = confirmed_new), color = "grey70", size = 0.05) + 
+  geom_path(data = state_map, colour = "black") +
+  coord_map() +
+  scale_fill_distiller(trans = "log10", direction = 1, palette = "YlOrRd", na.value = "white", limits = c(1, 1E4), labels = comma)
+  
+p + 
+  transition_manual(frames = date)
+
+BUILD ANIMATED GGPLOT MAPS
+```{r}
+tn_map <- counties_data %>%
+  filter(year == 2011-01-01) %>%
+  ggplot() + geom_sf(data = counties_data, color = "black", aes(fill = population, na.value="grey80"))
+
+#tn_map_animated <- tn_map + transition_manual(frames = date)
+  
+
+tn_map
+# ggplot(data = counties_data %>% filter(year == 2018)) +
+#   geom_sf(color = "black", aes(fill = population))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 TESTING FABLE PACKAGE:

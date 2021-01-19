@@ -61,7 +61,7 @@ counties_geo <- inner_join(counties, county_centers, by = "county")
 ```
 
 ```{r}
-#write_csv(counties_geo, "counties_geo.csv")
+#st_write(counties_geo, "counties_geo.shp")
 ```
 
 ```{r}
