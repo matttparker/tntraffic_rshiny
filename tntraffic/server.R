@@ -55,7 +55,7 @@ shinyServer(function(input, output) {
     
     output$tn_map <- renderPlotly({
         tn_map <- rval_counties_data() %>%
-            ggplot() + geom_sf(color = "black", aes(fill= traffic_growth_rate))
+            ggplot() + geom_sf(color = "black", aes(fill= pct_pop_change))
         tn_map
     })
     
