@@ -1,0 +1,112 @@
+```{r}
+library(shiny)
+library(tidyverse)
+library(ggplot2)
+library(shinydashboard)
+library(RColorBrewer)
+library(leaflet)
+library(dplyr)
+library(plotly)
+library(sf)
+```
+
+```{r}
+#Import Data
+traffic <- read_csv("../data/traffic.csv")
+counties_data <- st_read("../data/counties_data.shp")
+#Rename columns
+colnames(counties_data) <- c("county_cd", "county", "lat", "long", "year", "population", "pct_pop_change", "avg_commute_mins", "pct_comm_change", "traffic_growth_rate", "geometry")
+```
+
+```{r}
+# View(traffic)
+# View(counties_data)
+```
+
+VISUAL 1: COUNTIES BY POPULATION CHANGE 2010-2018
+```{r}
+pop_change_df <- counties_data %>%
+  mutate(total_pop_change = (population / lead(population, 8L) - 1) * 100) %>%
+  filter(year == "2018-01-01")
+pop_change_df %>%
+  arrange(desc(total_pop_change)) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(county, -total_pop_change), y = total_pop_change, fill = population)) + geom_col()
+```
+
+```{r}
+ggplot(pop_change_df) + geom_sf(color = "black", aes(fill= total_pop_change))
+```
+
+VISUAL 2: COUNTIES BY CHANGE IN COMMUTE TIMES, 2010-2018
+```{r}
+comm_change_df <- counties_data %>%
+  mutate(total_comm_change = (avg_commute_mins / lead(avg_commute_mins, 8L) - 1) * 100) %>%
+  filter(year == "2018-01-01")
+ggplot(comm_change_df) + geom_sf(color = "black", aes(fill= avg_commute_mins))
+```
+
+```{r}
+commuter_bargraph <- comm_change_df %>%
+  arrange(desc(avg_commute_mins)) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(county, -total_comm_change), y = total_comm_change, fill = total_comm_change)) + 
+  geom_col() +
+  scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = "% Change") +
+  geom_text(aes(label = avg_commute_mins), vjust = -0.2) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 30, vjust=0.9, hjust=0.9), plot.title = element_text(hjust = 1)) +
+  ggtitle(expression(atop("Percent Change in Commute Time, 2010-2018", paste("(2018 Commute Time in mins)")))) +
+    xlab('County') + ylab('% Change in Commute Time')
+commuter_bargraph
+ggsave("commuter_bargraph.png", commuter_bargraph, device = png(), width = 6, height = 5)
+```
+
+```{r}
+comm_change_df_four <- counties_data %>%
+  mutate(total_comm_change = (avg_commute_mins / lead(avg_commute_mins, 8L) - 1) * 100) %>%
+  filter(!is.na(avg_commute_mins)) %>%
+  filter(county %in% c("Wilson", "Anderson", "Sevier", "Robertson"))
+comm_change_df_four %>%
+  arrange(desc(avg_commute_mins)) %>%
+  ggplot(aes(x = year, y = avg_commute_mins, color = county)) + geom_line()
+```
+
+TOP 100 ROADS
+```{r}
+top_100 <- traffic %>%
+  group_by(station_id) %>%
+  mutate(ann_growth_rate = ((daily_traffic / lead(daily_traffic, 9L)) ** (1/9) - 1) * 100) %>%
+  filter(year == "2018-01-01") %>%
+  filter(!is.infinite(ann_growth_rate)) %>%
+  arrange(desc(ann_growth_rate)) %>%
+  head(100)
+top_100_list <- top_100 %>%
+  pull(station_id)
+View(top_100_list)
+```
+
+```{r}
+traffic_100 <- traffic[traffic$station_id %in% top_100_list, ]
+```
+
+
+```{r}
+df <- traffic_100 %>% filter(year == "2018-01-01")
+map_bins <- c(min(df$pct_change), -5, 0, 5, 10, 15, 20, 25, 30, max(df$pct_change))
+colors = c("#00b81c", "#fafa00", "#eb0000")
+pal = colorBin(palette=colors, bins=map_bins)
+        
+leaflet(data = df) %>%
+    setView(-86.5804, 35.5175, zoom = 7) %>%
+    addTiles() %>%
+    addCircleMarkers(
+        color = ~pal(pct_change),
+        stroke = FALSE, fillOpacity = 0.5,
+        lng = ~long,lat = ~lat,
+        popup = ~paste0(location,
+                        "<br/>Average Daily Traffic: ", daily_traffic,
+                        "<br/>Percent Change: ", pct_change)) %>%
+    addLegend(pal = pal, values = ~pct_change, title = "Percent Change", position = "bottomright")
+```
+
