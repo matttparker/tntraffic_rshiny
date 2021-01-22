@@ -32,7 +32,7 @@ shinyUI(
                                     "Percent Population Change" = "pct_pop_change",
                                     "Average Commute Time" = "avg_commute_mins", 
                                     "Percent Commute Change" = "pct_comm_change", 
-                                    "Weighted Change in Traffic" = "traffic_growth_rate")
+                                    "Weighted Change in Traffic Volume" = "traffic_growth_rate")
             ),
             sliderInput("toproads",
                         "Select # of Fastest Growing Roads:",

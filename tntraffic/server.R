@@ -87,14 +87,15 @@ shinyServer(function(input, output) {
     
     output$tn_map <- renderPlotly({
         tn_map <- rval_counties_data() %>%
-            ggplot(aes_string(fill= input$variable)) + geom_sf(color = "black", size = .2) +
+            ggplot(aes_string(fill= input$variable)) + geom_sf(color = "black", size = .2,
+                aes(text = county)) +
             scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable) +
             #theme_classic() 
             theme(axis.text.x = element_blank(),
                   axis.text.y = element_blank(),
                   axis.ticks = element_blank(),
                   rect = element_blank())
-        tn_map
+        ggplotly(tn_map)
     })
     
     output$bar_plot <- renderPlot({
