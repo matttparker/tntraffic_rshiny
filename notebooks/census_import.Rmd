@@ -45,7 +45,8 @@ county_pops <- county_pops %>%
   mutate(year = as.numeric(year)) %>%
   arrange(county, desc(year)) %>%
   group_by(county) %>% 
-  mutate(pct_pop_change = (population/lead(population) - 1) * 100)
+  mutate(pct_pop_change = (population/lead(population) - 1) * 100) %>%
+  mutate(pct_pop_change = round(pct_pop_change, 2))
 #View(county_pops)
 ```
 
@@ -92,7 +93,8 @@ commute_df <- commute_import(2010, 2018)
 commute_df <- commute_df %>%
   arrange(county, desc(year)) %>%
   group_by(county) %>% 
-  mutate(pct_comm_change = (avg_commute_mins/lead(avg_commute_mins) - 1) * 100)
+  mutate(pct_comm_change = (avg_commute_mins/lead(avg_commute_mins) - 1) * 100) %>%
+  mutate(pct_comm_change = round(pct_comm_change, 2))
 #View(commute_df)
 ```
 
@@ -100,7 +102,7 @@ commute_df <- commute_df %>%
 #Merge census dataframes, correct multi-word county name, and export
 census_traffic <- left_join(county_pops, commute_df) %>%
   mutate(county = str_replace(county, "Van", "Van Buren"))
-View(census_traffic)
+#View(census_traffic)
 #write_csv(census_traffic, "census_traffic.csv")
 ```
 

@@ -27,6 +27,7 @@ traffic <- rename(traffic, long = x, lat = y, daily_traffic = adjavgdly) %>%
   filter(year >= 2009) %>%
   group_by(station_id) %>% 
   mutate(pct_change = (daily_traffic/lead(daily_traffic) - 1) * 100) %>%
+  mutate(pct_change = round(pct_change, 2)) %>%
   mutate(year = lubridate::ymd(year, truncated = 2L))
 traffic$pct_change <- traffic$pct_change %>% replace(is.na(.), 0)
 traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
@@ -47,7 +48,6 @@ keep_roads <- traffic %>%
 #Filter traffic by removing rows with station_id not in keep_roads
 traffic <- traffic[traffic$station_id %in% keep_roads, ]
 #View(traffic)
-#expr[expr$cell_type %in% c("hesc", "bj fibroblast"), ]
 ```
 
 ```{r}
@@ -95,6 +95,8 @@ traffic_growth <- traffic %>%
   mutate(weighted_traffic = pct_change * traffic_factor) %>%
   summarise(sum(weighted_traffic))
 colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
+traffic_growth <- traffic_growth %>%
+  mutate(traffic_growth_rate = round(traffic_growth_rate, 2))
 #View(traffic_growth)
 ```
 
@@ -112,26 +114,26 @@ colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
 ```
 
 ```{r}
-#Create annualized growth rate from 2009-2018
-traffic_growth_nine_yr <- traffic %>%
-  group_by(county, year) %>%
-  summarise(total_daily = sum(daily_traffic)) %>% 
-  arrange(county, desc(year)) %>%
-  mutate(ann_growth_rate = ((total_daily / lead(total_daily, 9L)) ** (1/9) - 1) * 100) %>%
-  filter(year == 2018)
-#View(traffic_growth_nine_yr)
+# #Create annualized growth rate from 2009-2018
+# traffic_growth_nine_yr <- traffic %>%
+#   group_by(county, year) %>%
+#   summarise(total_daily = sum(daily_traffic)) %>% 
+#   arrange(county, desc(year)) %>%
+#   mutate(ann_growth_rate = ((total_daily / lead(total_daily, 9L)) ** (1/9) - 1) * 100) %>%
+#   filter(year == 2018)
+# #View(traffic_growth_nine_yr)
 ```
 
 ```{r}
-#Create annualized growth rate from 2015-2018
-traffic_growth_three_yr <- traffic %>%
-  filter(year >= 2015) %>%
-  group_by(county, year) %>%
-  summarise(total_daily = sum(daily_traffic)) %>% 
-  arrange(county, desc(year)) %>%
-  mutate(ann_growth_rate = ((total_daily / lead(total_daily, 3L)) ** (1/3) - 1) * 100) %>%
-  filter(year == 2018)
-#View(traffic_growth_three_yr)
+# #Create annualized growth rate from 2015-2018
+# traffic_growth_three_yr <- traffic %>%
+#   filter(year >= 2015) %>%
+#   group_by(county, year) %>%
+#   summarise(total_daily = sum(daily_traffic)) %>% 
+#   arrange(county, desc(year)) %>%
+#   mutate(ann_growth_rate = ((total_daily / lead(total_daily, 3L)) ** (1/3) - 1) * 100) %>%
+#   filter(year == 2018)
+# #View(traffic_growth_three_yr)
 ```
 
 
@@ -158,9 +160,6 @@ counties_data %<>% st_sf(sf_column_name = 'geometry')
 
 counties_data
 View(counties_data)
-
-class(counties_data)
-
 #st_write(counties_data, "counties_data.shp")
 #write_csv(counties_data, "counties_data.csv")
 ```

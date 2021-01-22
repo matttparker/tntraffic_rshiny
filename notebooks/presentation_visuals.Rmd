@@ -27,7 +27,8 @@ VISUAL 1: COUNTIES BY POPULATION CHANGE 2010-2018
 ```{r}
 pop_change_df <- counties_data %>%
   mutate(total_pop_change = (population / lead(population, 8L) - 1) * 100) %>%
-  filter(year == "2018-01-01")
+  filter(year == "2018-01-01") %>%
+  mutate(variable = total_pop)
 pop_change_df %>%
   arrange(desc(total_pop_change)) %>%
   head(10) %>%
@@ -59,17 +60,25 @@ commuter_bargraph <- comm_change_df %>%
   ggtitle(expression(atop("Percent Change in Commute Time, 2010-2018", paste("(2018 Commute Time in mins)")))) +
     xlab('County') + ylab('% Change in Commute Time')
 commuter_bargraph
-ggsave("commuter_bargraph.png", commuter_bargraph, device = png(), width = 6, height = 5)
+#ggsave("commuter_bargraph.png", commuter_bargraph, device = png(), width = 6, height = 5)
 ```
 
 ```{r}
 comm_change_df_four <- counties_data %>%
   mutate(total_comm_change = (avg_commute_mins / lead(avg_commute_mins, 8L) - 1) * 100) %>%
   filter(!is.na(avg_commute_mins)) %>%
-  filter(county %in% c("Wilson", "Anderson", "Sevier", "Robertson"))
-comm_change_df_four %>%
+  filter(county %in% c("Wilson", "Anderson", "Sevier", "Maury"))
+commute_linegraph <- comm_change_df_four %>%
   arrange(desc(avg_commute_mins)) %>%
-  ggplot(aes(x = year, y = avg_commute_mins, color = county)) + geom_line()
+  ggplot(aes(x = year, y = avg_commute_mins, color = county)) + 
+  geom_line() +
+  theme_classic() +
+  scale_color_manual(values = c("#ff3333", "#b2b47e", "#93ab87", "#87aba6"), name = "County") +
+  ggtitle("Average Commute Time") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab('Year') + ylab('Average Commute Time (minutes)')
+commute_linegraph
+#ggsave("commute_linegraph.png", commute_linegraph, device = png(), width = 7, height = 5.5)
 ```
 
 TOP 100 ROADS
@@ -83,7 +92,7 @@ top_100 <- traffic %>%
   head(100)
 top_100_list <- top_100 %>%
   pull(station_id)
-View(top_100_list)
+#View(top_100_list)
 ```
 
 ```{r}
@@ -93,7 +102,7 @@ traffic_100 <- traffic[traffic$station_id %in% top_100_list, ]
 
 ```{r}
 df <- traffic_100 %>% filter(year == "2018-01-01")
-map_bins <- c(min(df$pct_change), -5, 0, 5, 10, 15, 20, 25, 30, max(df$pct_change))
+map_bins <- c(min(df$pct_change), 0, 10, 20, 30, 40, 50, 60, max(df$pct_change))
 colors = c("#00b81c", "#fafa00", "#eb0000")
 pal = colorBin(palette=colors, bins=map_bins)
         
