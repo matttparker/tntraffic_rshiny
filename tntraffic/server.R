@@ -26,8 +26,8 @@ shinyServer(function(input, output) {
     
     rval_state_barplot <- reactive({
         counties_data %>%
-            filter(year == paste0(input$year, "-01-01"))# %>%
-            mutate(user_variable = reorder_within(county, input$variable, within = NULL))
+            filter(year == paste0(input$year, "-01-01")) %>%
+            mutate(variable = .data[[input$variable]])
             #factor(input$variable, levels = desc(input$variable))
             #select(c("county", "year", input$variable, "geometry"))
     })
@@ -53,9 +53,9 @@ shinyServer(function(input, output) {
         key <- row.names(rval_traffic())
         #Draw the scatter plot
         p <- rval_traffic() %>%
-            ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key)) + 
+            ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key, color = "#ec3c3c", show.legend = FALSE)) + 
             geom_point() + scale_x_log10() +
-            theme_classic()
+            theme_classic() + theme(legend.position = 'none')
         #Remember the selection
         ggplotly(p) %>% layout(dragmode = "select")
         
@@ -87,26 +87,32 @@ shinyServer(function(input, output) {
     
     output$tn_map <- renderPlotly({
         tn_map <- rval_counties_data() %>%
-            ggplot(aes_string(fill= input$variable)) + geom_sf(color = "black") +
-            theme_classic()
+            ggplot(aes_string(fill= input$variable)) + geom_sf(color = "black", size = .2) +
+            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable) +
+            #theme_classic() 
+            theme(axis.text.x = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks = element_blank(),
+                  rect = element_blank())
         tn_map
     })
     
     output$bar_plot <- renderPlot({
+        print(rval_state_barplot()$variable)
         rval_state_barplot() %>%
             #filter(year == '2011-01-01') %>%
-            arrange(desc(input$variable)) %>%
+            #mutate(variable = parse(input$variable)) %>%
+            arrange(desc(variable)) %>%
             head(10) %>%
-            #factor(input$variable, levels = input$variable) %>%
-            ggplot(aes_string(x = "county", y = input$variable, fill = input$variable)) + 
+            #factor(variable, levels = variable) %>%
+            ggplot(aes(x= reorder(county, -variable), y = variable, fill = variable)) +
             geom_col() +
-            scale_y_reordered() +
-            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = "legend title") +
-            geom_text(aes_string(label = input$variable), vjust = -0.2) +
+            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable) +
+            geom_text(aes(label = variable), vjust = -0.2) +
             theme_classic() +
             theme(axis.text.x = element_text(angle = 30, vjust=0.9, hjust=0.9), plot.title = element_text(hjust = 1)) +
-            ggtitle(expression(atop("Percent Change in Commute Time, 2010-2018", paste("(2018 Commute Time in mins)")))) +
-            xlab('County') + ylab('% Change in Commute Time')
+            #ggtitle(expression(atop("Percent Change in Commute Time, 2010-2018", paste("(2018 Commute Time in mins)")))) +
+            xlab('County') + ylab(input$variable)
     })
     
     output$state_scatter_plot <- renderPlotly({
@@ -114,9 +120,9 @@ shinyServer(function(input, output) {
         key <- row.names(rval_top_traffic())
         #Draw the scatter plot
         p <- rval_top_traffic() %>%
-            ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key)) + 
+            ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key, color = "#ec3c3c")) +
             geom_point() + scale_x_log10() +
-            theme_classic()
+            theme_classic() + theme(legend.position = 'none')
         #Remember the selection
         ggplotly(p) %>% layout(dragmode = "select")
         

@@ -25,4 +25,10 @@ counties_data
 #   filter(year == "2018-01-01") %>%
 #   ggplot() + geom_sf(color = "black", aes(fill= population))
 # tn_map
+
+# 
+# filter(statistic_group == input$plots, 
+#        NAME == input$location, 
+#        estimate != pop_denom, 
+#        age_group != 'All') %>% 
   
