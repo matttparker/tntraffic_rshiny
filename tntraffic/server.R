@@ -3,13 +3,7 @@ shinyServer(function(input, output) {
     rval_traffic <- reactive({
         traffic %>%
             filter(county == input$county)  %>%
-            filter(year == paste0(input$year, "-01-01"))
-    })
-    
-    rval_top_traffic <- reactive({
-        traffic %>%
-            #filter(county == input$county)  %>%
-            filter(year == paste0(input$year, "-01-01"))
+            filter(year == paste0(input$year1, "-01-01"))
     })
     
     rval_counties <- reactive({
@@ -35,6 +29,7 @@ shinyServer(function(input, output) {
     rval_top_traffic <- reactive({
         top_roads <- traffic %>%
             group_by(station_id) %>%
+            filter(min(daily_traffic) >= input$ntoproads) %>%
             mutate(ann_growth_rate = ((daily_traffic / lead(daily_traffic, 9L)) ** (1/9) - 1) * 100) %>%
             filter(year == "2018-01-01") %>%
             filter(!is.infinite(ann_growth_rate)) %>%
@@ -43,7 +38,7 @@ shinyServer(function(input, output) {
         top_roads_list <- top_roads %>%
             pull(station_id)
         traffic[traffic$station_id %in% top_roads_list, ] %>%
-            filter(year == paste0(input$year, "-01-01"))
+            filter(year == paste0(input$year2, "-01-01"))
         
         
     })
@@ -99,7 +94,6 @@ shinyServer(function(input, output) {
     })
     
     output$bar_plot <- renderPlot({
-        print(rval_state_barplot()$variable)
         rval_state_barplot() %>%
             #filter(year == '2011-01-01') %>%
             #mutate(variable = parse(input$variable)) %>%

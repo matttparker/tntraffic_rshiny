@@ -9,7 +9,7 @@ library(leaflet)
 library(dplyr)
 library(plotly)
 library(sf)
-library(gganimate)
+library(ggiraph)
 
 traffic <- read_csv("data/traffic.csv")
 #View(traffic)
