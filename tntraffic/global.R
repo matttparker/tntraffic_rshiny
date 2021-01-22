@@ -20,6 +20,7 @@ colnames(counties_data) <- c("county_cd", "county", "lat", "long", "year", "popu
 #counties_data %<>% st_sf(sf_column_name = 'geometry')
 counties_data
 
+
 # tn_map <- counties_data %>%
 #   filter(year == "2018-01-01") %>%
 #   ggplot() + geom_sf(color = "black", aes(fill= population))
