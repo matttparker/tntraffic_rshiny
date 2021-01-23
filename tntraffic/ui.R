@@ -84,6 +84,8 @@ shinyUI(
                  tabItem( 
                      tabName = "home",
                      fluidPage( 
+                         h1("All Roads Lead to Traffic"),
+                         h2("Where Tennessee's Roads Are Being Hit Hardest by Population Growth"),
                          h3("About This App"),
                          p("
                              I’ve had a lifelong passion for the built environment, and how humans have made the Earth more suitable for them. 
