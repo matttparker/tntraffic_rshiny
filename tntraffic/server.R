@@ -144,7 +144,7 @@ shinyServer(function(input, output) {
             df <- df[event_data("plotly_selected")$key,] }
         
         leaflet(data = df) %>%
-            setView(-86.5804, 35.5175, zoom = 6) %>%
+            setView(-86.5804, 35.5175, zoom = 7) %>%
             addTiles() %>%
             addCircleMarkers(
                 color = ~pal(pct_change),

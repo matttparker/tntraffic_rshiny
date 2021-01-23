@@ -64,7 +64,7 @@ shinyUI(
                                          animate = TRUE
                              ),
                              sliderInput("toproads",
-                                         "Select # of Fastest Growing Roads:",
+                                         "Select # of Fastest Growing Roads (2010-2018):",
                                          value = 50,
                                          min = 1,
                                          max = 200
