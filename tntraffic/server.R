@@ -3,7 +3,8 @@ shinyServer(function(input, output) {
     rval_traffic <- reactive({
         traffic %>%
             filter(county == input$county)  %>%
-            filter(year == paste0(input$year1, "-01-01"))
+            filter(year == paste0(input$year1, "-01-01")) %>%
+            filter(daily_traffic >= input$ntoproads1)
     })
     
     rval_counties <- reactive({
@@ -29,7 +30,7 @@ shinyServer(function(input, output) {
     rval_top_traffic <- reactive({
         top_roads <- traffic %>%
             group_by(station_id) %>%
-            filter(min(daily_traffic) >= input$ntoproads) %>%
+            filter(min(daily_traffic) >= input$ntoproads2) %>%
             mutate(ann_growth_rate = ((daily_traffic / lead(daily_traffic, 9L)) ** (1/9) - 1) * 100) %>%
             filter(year == "2018-01-01") %>%
             filter(!is.infinite(ann_growth_rate)) %>%
@@ -43,14 +44,21 @@ shinyServer(function(input, output) {
         
     })
     
+    output$downloadPDF <- downloadHandler(
+        filename = 'TNTraffic_Presentation.pdf',
+        content = function(file) {
+            file.copy(from = 'tntraffic_app_presentation.pdf', to = file)
+        })
+    
     output$scatter_plot <- renderPlotly({
         #Define a key
         key <- row.names(rval_traffic())
         #Draw the scatter plot
         p <- rval_traffic() %>%
             ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key, color = "#ec3c3c", show.legend = FALSE)) + 
-            geom_point() + scale_x_log10() +
-            theme_classic() + theme(legend.position = 'none')
+            geom_point() + scale_x_log10(labels = comma) +
+            theme_classic() + theme(legend.position = 'none') +
+            xlab('Annual Average Daily Traffic') + ylab('Percent Annual Change')
         #Remember the selection
         ggplotly(p) %>% layout(dragmode = "select")
         
@@ -84,7 +92,7 @@ shinyServer(function(input, output) {
         tn_map <- rval_counties_data() %>%
             ggplot(aes_string(fill= input$variable)) + geom_sf(color = "black", size = .2,
                 aes(text = county)) +
-            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable) +
+            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable, labels = comma) +
             #theme_classic() 
             theme(axis.text.x = element_blank(),
                   axis.text.y = element_blank(),
@@ -102,8 +110,9 @@ shinyServer(function(input, output) {
             #factor(variable, levels = variable) %>%
             ggplot(aes(x= reorder(county, -variable), y = variable, fill = variable)) +
             geom_col() +
-            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable) +
-            geom_text(aes(label = variable), vjust = -0.2) +
+            scale_fill_gradient(low = "#ec3c3c", high = "#740b0b", name = input$variable, labels = comma) +
+            scale_y_continuous(label=comma) +
+            geom_text(aes(label = comma(variable)), vjust = -0.2) +
             theme_classic() +
             theme(axis.text.x = element_text(angle = 30, vjust=0.9, hjust=0.9), plot.title = element_text(hjust = 1)) +
             #ggtitle(expression(atop("Percent Change in Commute Time, 2010-2018", paste("(2018 Commute Time in mins)")))) +
@@ -116,8 +125,9 @@ shinyServer(function(input, output) {
         #Draw the scatter plot
         p <- rval_top_traffic() %>%
             ggplot(aes(x = daily_traffic, y = pct_change, label = location, key = key, color = "#ec3c3c")) +
-            geom_point() + scale_x_log10() +
-            theme_classic() + theme(legend.position = 'none')
+            geom_point() + scale_x_log10(labels = comma) +
+            theme_classic() + theme(legend.position = 'none') +
+            xlab('Annual Average Daily Traffic') + ylab('Percent Annual Change')
         #Remember the selection
         ggplotly(p) %>% layout(dragmode = "select")
         

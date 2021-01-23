@@ -10,6 +10,7 @@ library(dplyr)
 library(plotly)
 library(sf)
 library(ggiraph)
+library(scales)
 
 traffic <- read_csv("data/traffic.csv")
 #View(traffic)
