@@ -39,6 +39,7 @@ county_pops <- county_pops %>%
   filter(!grepl('4/1', DATE_DESC)) %>%
   mutate(DATE_DESC = substr(DATE_DESC,5,8))
 colnames(county_pops) <- c('county', 'year', 'population')
+
 #Arrange, and add a percent change column
 county_pops <- county_pops %>%
   filter(year != 2019) %>%
@@ -55,11 +56,14 @@ county_pops <- county_pops %>%
 #Create function to import commute data by year
 commute_import <- function(year_start, year_end) {
   
+  #Initiate empty tibble, set first import year as argument year_start
   commute_df <- NULL
   year = year_start
   
+  #Initiate while loop, to continue until reaching argument year_end
   while (year <= year_end){
 
+    #One year at a time, import commute data for all counties in state of TN
     acs_comm <- getCensus(
       key = CENSUS_KEY,  
       name = "acs/acs1/subject", 
@@ -68,15 +72,19 @@ commute_import <- function(year_start, year_end) {
       region = "county:*",
       regionin = "state:47")
     
+    #Select only county name and data columns, clean, add column to represent data year
     acs_comm <- acs_comm %>%
       select(c("NAME", "S0801_C01_046E")) %>%
       mutate(NAME = sub(" .*", "", NAME)) %>%
       mutate(year = year)
-  
+    
+    #Rename Columns
     colnames(acs_comm) <- c('county', 'avg_commute_mins', 'year')
     
+    #Add row to initial data frame
     commute_df <- bind_rows(commute_df, acs_comm)
     
+    #Add year to continue loop with subsequent year
     year <- year + 1
   
   }

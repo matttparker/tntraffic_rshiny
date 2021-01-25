@@ -1,40 +1,41 @@
 ```{r}
-library(shiny)
 library(tidyverse)
 library(ggplot2)
-library(shinydashboard)
 library(RColorBrewer)
 library(foreign)
 library(leaflet)
 library(magrittr)
 library(dplyr)
-library(fpp2)
-library(fable)
 library(tsibble)
 library(lubridate)
 library(sf)
-library(gganimate)
 ```
 
 ```{r}
+#Import TDOT Traffic Data
 traffic <- read.dbf("../data/TrfcHistYR.dbf")
 ```
 
 ```{r}
+#Rename columns, convert year column to numeric
 colnames(traffic) <- str_to_lower(colnames(traffic))
 traffic$year <- as.numeric(as.character(traffic$year))
+
+#Rename columns, filter years, add percent change column, convert year to datetime
 traffic <- rename(traffic, long = x, lat = y, daily_traffic = adjavgdly) %>%
   filter(year >= 2009) %>%
   group_by(station_id) %>% 
   mutate(pct_change = (daily_traffic/lead(daily_traffic) - 1) * 100) %>%
   mutate(pct_change = round(pct_change, 2)) %>%
   mutate(year = lubridate::ymd(year, truncated = 2L))
+
+#Remove rows with null or inf Values
 traffic$pct_change <- traffic$pct_change %>% replace(is.na(.), 0)
 traffic$pct_change[which(!is.finite(traffic$pct_change))] <- 0
 ```
 
 ```{r}
-#Keep roads with all years
+#Remove stations which don't have data for all years. Start by creating a list I will use to filter.
 keep_roads <- traffic %>%
   group_by(station_id) %>%
   count(station_id) %>%
@@ -54,12 +55,9 @@ traffic <- traffic[traffic$station_id %in% keep_roads, ]
 #write_csv(traffic, "traffic.csv")
 ```
 
+######################################################################################################
 
-
-
-
-
-SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA
+SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA (keep for potential future use)
 ```{r}
 # #Create formula for caluclating projected growth. Start with adding a weighting column, and multiplying to create weighted pct.
 # traffic <- traffic %>%
@@ -84,7 +82,7 @@ SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA
 # View(traffic)
 ```
 
-
+###################################################################################################
 
 
 FIND WEIGHTED AVERAGE OF TRAFFIC CHANGES PER YEAR
@@ -99,6 +97,11 @@ traffic_growth <- traffic_growth %>%
   mutate(traffic_growth_rate = round(traffic_growth_rate, 2))
 #View(traffic_growth)
 ```
+
+
+######################################################################################################
+
+SKIP FOLLOWING SECTION - DEPRECATED PROJECTION FORMULA (keep for potential future use)
 
 ```{r}
 # traffic_growth <- traffic %>%
@@ -136,6 +139,9 @@ traffic_growth <- traffic_growth %>%
 # #View(traffic_growth_three_yr)
 ```
 
+######################################################################################################
+
+
 
 MERGE TRAFFIC FORECAST, POPULATION, COMMUTER DATA, AND COUNTY GEOGRAPHY BY COUNTY BY YEAR
 ```{r}
@@ -166,24 +172,9 @@ View(counties_data)
 
 
 
+############################################################################################################
 
-p <- part_data %>%
-  filter(date == as.Date("2020-03-30")) %>%
-  ggplot(aes(x = long, y = lat, group = group)) +
-  geom_polygon(aes(fill = confirmed_new), color = "grey70", size = 0.05) + 
-  geom_path(data = state_map, colour = "black") +
-  coord_map() +
-  scale_fill_distiller(trans = "log10", direction = 1, palette = "YlOrRd", na.value = "white", limits = c(1, 1E4), labels = comma)
-  
-p + 
-  transition_manual(frames = date)
-
-
-
-
-
-
-BUILD ANIMATED GGPLOT MAPS
+BUILD ANIMATED GGPLOT MAPS (Unsuccessful attempt - Keep for potential future use)
 ```{r}
 tn_map <- counties_data %>%
   filter(year == 2011-01-01) %>%
@@ -210,57 +201,7 @@ counties_data %>%
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-TESTING FABLE PACKAGE:
-```{r}
-#convert to tsibble - test one county for now
-forecast_ts <-forecast_df %>%
-  mutate(year = lubridate::ymd(year, truncated = 2L)) %>%
-  filter(county == "Davidson") %>%
-  as_tsibble()
-```
-
-
-```{r}
-forecast_ts
-```
-
-```{r}
-yrs <- c(2001, 2002, 2002, 2002, 2003, 2005)
-lubridate::ymd(yrs, truncated = 2L)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BEGIN LEAFLET MAP
+BEGIN TESTING LEAFLET MAP
 
 ```{r}
 pal <- colorNumeric(
@@ -279,15 +220,6 @@ davidson_map <- leaflet(davidson_traffic) %>%
                     "<br/>Percent Change: ", pct_change))
 davidson_map
 ```
-
-
-
-
-```{r}
-#leaflet(options = leafletOptions(minZoom = 0, maxZoom = 18))
-```
-
-
 
 
 

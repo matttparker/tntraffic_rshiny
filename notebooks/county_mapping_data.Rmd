@@ -6,11 +6,13 @@ library(ggplot2)
 ```
 
 ```{r}
+#Import USA county shapefile
 #Source: https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html
 counties <- st_read("../data/cb_2018_us_county_20m.shp")
 ```
 
 ```{r}
+#Remove other states and unneeded columns, rename columns 
 counties <- counties %>% 
   filter(STATEFP == 47) %>%
   select(c("COUNTYFP", "NAME", "geometry")) %>%
@@ -24,24 +26,15 @@ colnames(counties) <- c("county_code", "county", "geometry")
 ```
 
 ```{r}
-# ggplot() + 
-#   geom_sf(data = counties, size = 3, color = "black", fill = "cyan1") + 
-#   ggtitle("TN Counties") + 
-#   coord_sf()
-```
-
-Pull County List for use in Google API Notebook
-```{r}
+#Pull County List for use in Google API Notebook
 # county_list <- data_frame(counties$county)
 # View(county_list)
-```
-
-```{r}
 #write_csv(county_list, "county_list.csv")
 ```
 
-Import County Geographic Centers, and Merge
+
 ```{r}
+#Import County Geographic Centers from googlemapsapi_one, and Merge
 county_centers <- read_csv("../data/county_centers.csv")
 #View(county_centers)
 ```
@@ -64,11 +57,6 @@ counties_geo <- inner_join(counties, county_centers, by = "county")
 #st_write(counties_geo, "counties_geo.shp")
 ```
 
-```{r}
-ggplot(data = counties_geo) +
-  geom_sf(color = "black", aes(fill = county_code))
-  
-```
 
 
 
