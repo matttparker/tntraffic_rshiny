@@ -1,0 +1,12 @@
+name: TnTraffic
+title: TnTraffic
+username:
+account: matttparker
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3511158
+bundleId: 4155413
+url: https://matttparker.shinyapps.io/TnTraffic/
+when: 1611873379.82398
+asMultiple: FALSE
+asStatic: FALSE

@@ -27,8 +27,8 @@ VISUAL 1: COUNTIES BY POPULATION CHANGE 2010-2018
 ```{r}
 pop_change_df <- counties_data %>%
   mutate(total_pop_change = (population / lead(population, 8L) - 1) * 100) %>%
-  filter(year == "2018-01-01") %>%
-  mutate(variable = total_pop)
+  filter(year == "2018-01-01")# %>%
+  #mutate(variable = total_pop)
 pop_change_df %>%
   arrange(desc(total_pop_change)) %>%
   head(10) %>%
@@ -117,5 +117,41 @@ leaflet(data = df) %>%
                         "<br/>Average Daily Traffic: ", daily_traffic,
                         "<br/>Percent Change: ", pct_change)) %>%
     addLegend(pal = pal, values = ~pct_change, title = "Percent Change", position = "bottomright")
+```
+
+
+TESTING CHOROPLETH OVER LEAFLET
+```{r}
+df <- traffic_100 %>% filter(year == "2018-01-01")
+map_bins <- c(min(df$pct_change), 0, 10, 20, 30, 40, 50, 60, max(df$pct_change))
+colors = c("#00b81c", "#fafa00", "#eb0000")
+pal = colorBin(palette=colors, bins=map_bins)
+choro_pal <- colorQuantile(palette = "Reds", domain = pop_change_df$total_pop_change, n = 5)
+        
+leaf_map <- leaflet(data = df) %>%
+    setView(-86.5804, 35.5175, zoom = 7) %>%
+    addTiles() %>%
+  addPolygons(data = pop_change_df,
+              color = "black", weight = 0.2, smoothFactor = 0.2, fillOpacity = 0.3,
+              fillColor = ~choro_pal(pop_change_df$total_pop_change),
+              group = "View Variable?") %>% 
+  addLegend(position = "topright", pal = choro_pal, values = pop_change_df$total_pop_change,
+              title = "Variable",
+              opacity = 1)  %>%
+  addCircleMarkers(
+        color = ~pal(pct_change),
+        stroke = FALSE, fillOpacity = 0.6,
+        lng = ~long,lat = ~lat,
+        popup = ~paste0(location,
+                        "<br/>Average Daily Traffic: ", daily_traffic,
+                        "<br/>Percent Change: ", pct_change)) %>%
+  addLegend(pal = pal, values = ~pct_change, title = "Percent Change", position = "bottomright") %>%
+  addLayersControl(
+    overlayGroups = "View Variable?",
+    options = layersControlOptions(collapsed = FALSE)
+  )
+    
+
+leaf_map
 ```
 

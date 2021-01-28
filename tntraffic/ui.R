@@ -2,9 +2,12 @@ shinyUI(
     dashboardPage(skin = "red",
         
         # Application title
+        
         dashboardHeader(title = "Traffic in Tennessee"),
         
-        # Sidebar to Select County
+        #------------------------------------------------------
+        
+        # Sidebar Menu for Tab Pages
         
         dashboardSidebar(
             sidebarMenu(id = "menu_1",
@@ -13,6 +16,13 @@ shinyUI(
                 menuItem("County Traffic Counts", tabName = "county_map"),
                 menuItem("Top Roads", tabName = "top_roads")
             ),
+      
+            #------------------------------------------------------
+            #Add conditional inputs for each tab
+            #------------------------------------------------------
+            
+            #------------------------------------------------------
+            #Conditional Panel for State Trends Page
             
             conditionalPanel(condition = "input.menu_1 == 'tn_map'",
                 sliderInput("year",
@@ -32,6 +42,9 @@ shinyUI(
                                         "Weighted Change in Traffic Volume" = "traffic_growth_rate")
                 )
             ),
+            
+            #------------------------------------------------------
+            #Conditional Panel for County Map Page
             
             conditionalPanel(condition = "input.menu_1 == 'county_map'",
                              selectInput("county",
@@ -54,6 +67,8 @@ shinyUI(
                              )
             ),
             
+            #------------------------------------------------------
+            #Conditional Panel for Top Roads Page
             conditionalPanel(condition = "input.menu_1 == 'top_roads'",
                              sliderInput("year2",
                                          "Select a Year:",
@@ -74,11 +89,21 @@ shinyUI(
                                          value = 1000,
                                          min = 1,
                                          max = max(20000)
-                             )
+                             ),
+                             selectInput("chorolayer", 
+                                          "Select Variable to Overlay:",
+                                          choices = c("Population" = "population", 
+                                                      "Percent Population Change" = "pct_pop_change",
+                                                      "Average Commute Time" = "avg_commute_mins", 
+                                                      "Percent Commute Change" = "pct_comm_change", 
+                                                      "Weighted Change in Traffic Volume" = "traffic_growth_rate"), 
+                                          selected = "Population")
             )
         ),
         
-        # Show a plot of the generated distribution
+        #------------------------------------------------------
+        #About Me Page
+        
         dashboardBody(
              tabItems(
                  tabItem( 
@@ -115,11 +140,22 @@ shinyUI(
                          p("A problem of most Tennessee cities, especially Nashville and its surrounding areas, is that they experienced their highest growth after the advent of cars. 
                            Because of this, we do not have existing infrastructure to allow for easily implemented mass transit. 
                            Notably, many residential streets in Nashville do not even have sidewalks. 
-                           I am interested in solving the “last-mile” problem in Nashville - how can we create a comfortable experience for transit users to travel that final segment from the transit station to their front door?")
+                           I am interested in solving the “last-mile” problem in Nashville - how can we create a comfortable experience for transit users to travel that final segment from the transit station to their front door?"),
+                         
+                         h3("About Me"),
+                         p("My name is Matt, and I created this app as my Midcourse Project of the Data Science Bootcamp at Nashville Software School.
+                           Links to my Github and LinkedIn can be found below, and I can be contacted via email at parkermatthewt@gmail.com"),
+                         h4(a("Github", href = "https://github.com/matttparker")),
+                         h4(a("LinkedIn", href = "https://www.linkedin.com/in/matthewtparker/"))
                      )
                  ),
-                 tabItem(tabName = "tn_map",
-                   fluidRow(
+                 
+                 #------------------------------------------------------
+                 #OUTPUTS
+                 #------------------------------------------------------
+                 
+                tabItem(tabName = "tn_map",
+                    fluidRow(
                        box(width = NULL, plotlyOutput("tn_map")),
                        box(width = NULL, plotOutput("bar_plot"))
                     )
