@@ -9,9 +9,8 @@ library(plotly)
 library(sf)
 library(scales)
 
-traffic <- read_csv("data/traffic.csv")
 counties <- read_csv("data/counties_geo.csv")
 counties_data <- st_read("data/counties_data.shp")
 colnames(counties_data) <- c("county_cd", "county", "lat", "long", "year", "population", "pct_pop_change", "avg_commute_mins", "pct_comm_change", "traffic_growth_rate", "geometry")
-
+traffic <- read_csv("data/traffic.csv")
   

@@ -47,7 +47,6 @@ shinyServer(function(input, output) {
         top_roads <- traffic %>%
             group_by(station_id) %>%
             filter(min(daily_traffic) >= input$ntoproads2) %>%
-            mutate(ann_growth_rate = ((daily_traffic / lead(daily_traffic, 9L)) ** (1/9) - 1) * 100) %>%
             filter(year == "2018-01-01") %>%
             filter(!is.infinite(ann_growth_rate)) %>%
             arrange(desc(ann_growth_rate)) %>%
@@ -56,8 +55,6 @@ shinyServer(function(input, output) {
             pull(station_id)
         traffic[traffic$station_id %in% top_roads_list, ] %>%
             filter(year == paste0(input$year2, "-01-01"))
-        
-        
     })
     
     

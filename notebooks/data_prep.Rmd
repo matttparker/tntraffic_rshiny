@@ -48,7 +48,11 @@ keep_roads <- traffic %>%
 ```{r}
 #Filter traffic by removing rows with station_id not in keep_roads
 traffic <- traffic[traffic$station_id %in% keep_roads, ]
-#View(traffic)
+#Find total change in traffic from 2009-2018
+traffic <- traffic %>%
+  group_by(station_id) %>%
+  mutate(ann_growth_rate = ((daily_traffic / lead(daily_traffic, 9L)) ** (1/9) - 1) * 100)
+View(traffic)
 ```
 
 ```{r}
@@ -95,7 +99,6 @@ traffic_growth <- traffic %>%
 colnames(traffic_growth) <- c("county", "year", "traffic_growth_rate")
 traffic_growth <- traffic_growth %>%
   mutate(traffic_growth_rate = round(traffic_growth_rate, 2))
-#View(traffic_growth)
 ```
 
 
@@ -165,11 +168,10 @@ counties_data <- inner_join(counties %>% as.data.frame(), census_traffic, by = "
 counties_data %<>% st_sf(sf_column_name = 'geometry')
 
 counties_data
-View(counties_data)
+#View(counties_data)
 #st_write(counties_data, "counties_data.shp")
 #write_csv(counties_data, "counties_data.csv")
 ```
-
 
 
 ############################################################################################################
